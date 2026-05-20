@@ -915,6 +915,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:11px;}
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 12C3 12 4 4 6 4C8 4 8 8 10 8C12 8 13 12 15 12" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M10 8C11.5 6 13 5 15 5" stroke="currentColor" stroke-width="0.8" stroke-dasharray="1.5 1.5" stroke-linecap="round" opacity="0.5"/></svg>
         <span>Forecast</span>
       </div>
+      <div class="navbtn" onclick="goPanel('technicals')" data-p="technicals">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="10" width="3.5" height="4" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="5.8" y="7" width="3.5" height="7" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="10.5" y="4" width="3.5" height="10" rx="0.5" fill="currentColor" opacity="0.3"/><polyline points="1,8 4,5 7,6 10,3 14,4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Técnicos AV</span>
+      </div>
       <div class="navbtn" onclick="goPanel('anomaly')" data-p="anomaly">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M8.5 1L5 7.5H8.5L6.5 14L12 6.5H8.5L11 1Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round" fill="none"/></svg>
         <span>Yield Anomaly</span>
@@ -950,6 +954,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:11px;}
       <div id="tabbar">
         <div class="tab active" onclick="goPanel('fractal')"><div class="tab-dot"></div>Fractal</div>
         <div class="tab" onclick="goPanel('forecast')"><div class="tab-dot"></div>Forecast</div>
+        <div class="tab" onclick="goPanel('technicals')"><div class="tab-dot"></div>Técnicos AV</div>
         <div class="tab" onclick="goPanel('anomaly')"><div class="tab-dot"></div>Yield Anomaly</div>
         <div class="tab" onclick="goPanel('portfolio')"><div class="tab-dot"></div>Portfolio</div>
         <div class="tab tab-end" onclick="goPanel('backtest')"><div class="tab-dot"></div>Backtest</div>
@@ -1077,6 +1082,81 @@ table.tbl{width:100%;border-collapse:collapse;font-size:11px;}
                   <thead><tr id="fc-thead"><th>Percentil</th></tr></thead>
                   <tbody id="fc-tbody"><tr><td colspan="10" style="text-align:center;color:var(--w3);padding:12px">Ejecuta el módulo</td></tr></tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TÉCNICOS ALPHA VANTAGE ═══ -->
+        <div class="panel" id="panel-technicals">
+          <div class="ctrlbar">
+            <span class="cl">Intervalo</span>
+            <select class="csel" id="tc-int" onchange="runTechnicals()">
+              <option value="daily" selected>Diario</option>
+              <option value="weekly">Semanal</option>
+            </select>
+            <div class="csp"></div>
+            <span style="font-size:9px;color:var(--w3);font-family:'DM Mono',monospace;opacity:0.7">Alpha Vantage · caché 90 min</span>
+            <div class="csp"></div>
+            <button class="calc" onclick="runTechnicals()">Calcular</button>
+          </div>
+          <div class="ws" data-rw="268">
+            <div class="ws-hdl" onmousedown="startResize(event)"></div>
+
+            <!-- BBands + Price chart -->
+            <div class="pane full">
+              <div class="ph">
+                <span class="pt">Precio · Bandas Bollinger (20,2) · SMA20</span>
+                <span class="badge" id="tc-bb-badge" style="background:var(--tealf);color:var(--teal);border-color:var(--teal2)">—</span>
+                <span class="pg" id="tc-tag">—</span>
+              </div>
+              <div class="ca" style="position:relative">
+                <canvas id="ch-tc-bb"></canvas>
+                <div class="chint">Scroll=zoom · Drag=paneo · Doble-clic=reset</div>
+                <div class="loading" id="ld-technicals"><div class="spinner"></div><span class="ltxt">Consultando Alpha Vantage…</span></div>
+              </div>
+              <div class="sigbar">
+                <span class="sig" id="tc-sig">—</span>
+                <div style="width:1px;height:10px;background:var(--ln)"></div>
+                <span class="sn">BBands %B: <b id="tc-pctb">—</b></span>
+                <span class="sn">BW: <b id="tc-bw">—</b>%</span>
+                <span class="sn" style="margin-left:auto;opacity:0.6">Alpha Vantage</span>
+              </div>
+            </div>
+
+            <!-- RSI panel -->
+            <div class="pane r1">
+              <div class="ph"><span class="pt">RSI (14)</span><span class="badge" id="tc-rsi-badge">—</span></div>
+              <div class="ca" style="position:relative;min-height:80px">
+                <canvas id="ch-tc-rsi"></canvas>
+              </div>
+              <div class="mx" style="margin-top:6px">
+                <div class="mrow">
+                  <div class="mc tl"><div class="mc-l">RSI Actual</div><div class="mc-v tl" id="tc-rsi-val">—</div></div>
+                  <div class="mc wh"><div class="mc-l">Señal</div><div class="mc-v" id="tc-rsi-sig">—</div></div>
+                </div>
+                <div class="mrow">
+                  <div class="mc ng"><div class="mc-l">Sobrecompra</div><div class="mc-v ng">70</div></div>
+                  <div class="mc ps"><div class="mc-l">Sobreventa</div><div class="mc-v ps">30</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MACD panel -->
+            <div class="pane r2">
+              <div class="ph"><span class="pt">MACD (12,26,9)</span><span class="badge" id="tc-macd-badge">—</span></div>
+              <div class="ca" style="position:relative;min-height:80px">
+                <canvas id="ch-tc-macd"></canvas>
+              </div>
+              <div class="mx" style="margin-top:6px">
+                <div class="mrow">
+                  <div class="mc tl"><div class="mc-l">MACD</div><div class="mc-v" id="tc-macd-val">—</div></div>
+                  <div class="mc wh"><div class="mc-l">Signal</div><div class="mc-v" id="tc-macd-sig-val">—</div></div>
+                </div>
+                <div class="mrow">
+                  <div class="mc dm"><div class="mc-l">Histograma</div><div class="mc-v" id="tc-macd-hist">—</div></div>
+                  <div class="mc dm"><div class="mc-l">Cruce</div><div class="mc-v" id="tc-macd-cross">—</div></div>
+                </div>
               </div>
             </div>
           </div>
@@ -1541,8 +1621,8 @@ const ng=()=>getComputedStyle(document.body).getPropertyValue('--neg').trim();
 // ══════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════
-const PANELS=['fractal','forecast','anomaly','portfolio','alerts','backtest','risk'];
-const MOD_NAMES={fractal:'Fractal · OLS',forecast:'Forecast GARCH',anomaly:'Yield Anomaly',portfolio:'Portfolio',alerts:'Alertas',backtest:'Backtest',risk:'Risk Dashboard'};
+const PANELS=['fractal','forecast','technicals','anomaly','portfolio','alerts','backtest','risk'];
+const MOD_NAMES={fractal:'Fractal · OLS',forecast:'Forecast GARCH',technicals:'Técnicos · Alpha Vantage',anomaly:'Yield Anomaly',portfolio:'Portfolio',alerts:'Alertas',backtest:'Backtest',risk:'Risk Dashboard'};
 
 function goPanel(id){
   PANELS.forEach(p=>{
@@ -1565,9 +1645,10 @@ function goPanel(id){
   const cur = S.ticker;
   // fractal.lastRun is an object {tkr,rng,sig}, others are strings
   const frLastTkr = S.lastRun?.fractal?.tkr || S.lastRun?.fractal;
-  if(id==='fractal'  && frLastTkr  !== cur) setTimeout(runFractal,  80);
-  if(id==='forecast' && S.lastRun?.forecast !== cur) setTimeout(runForecast, 80);
-  if(id==='anomaly'  && S.lastRun?.anomaly  !== cur) setTimeout(runAnomaly,  80);
+  if(id==='fractal'     && frLastTkr              !== cur) setTimeout(runFractal,     80);
+  if(id==='forecast'    && S.lastRun?.forecast    !== cur) setTimeout(runForecast,    80);
+  if(id==='technicals'  && S.lastRun?.technicals  !== cur) setTimeout(runTechnicals,  80);
+  if(id==='anomaly'     && S.lastRun?.anomaly     !== cur) setTimeout(runAnomaly,     80);
   if(id==='portfolio' && S.lastRun?.portfolio !== cur) setTimeout(runPortfolio, 80);
   if(id==='risk'){
     // Always pre-run fractal with Risk's selected range (default 1D)
@@ -2211,6 +2292,190 @@ async function runForecast(){
   }
   if(window.innerWidth<768) setTimeout(mInitScroll,150);
   document.getElementById('ld-forecast').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════
+//  TÉCNICOS ALPHA VANTAGE
+// ══════════════════════════════════════════════
+
+// Calls relay /api/technicals — returns RSI + MACD + BBands from AV
+async function fetchTechnicals(ticker, interval='daily') {
+  const url = `${ARKA_API_BASE}/api/technicals?ticker=${encodeURIComponent(ticker)}&interval=${interval}`;
+  const r = await fetch(url, { headers:{ 'Authorization': `Bearer ${ARKA_API_KEY}` } });
+  if (!r.ok) throw new Error(`Relay HTTP ${r.status}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+async function runTechnicals() {
+  setTicker(); savePrefs();
+  const tkr      = S.ticker;
+  const interval = document.getElementById('tc-int')?.value || 'daily';
+  const ld       = document.getElementById('ld-technicals');
+  ld.classList.add('show');
+
+  try {
+    const d = await fetchTechnicals(tkr, interval);
+
+    // ── Tag + badge ──────────────────────────────────────────
+    document.getElementById('tc-tag').textContent = `${tkr} · ${interval.toUpperCase()} · AV`;
+
+    // ── BBands metrics ───────────────────────────────────────
+    const bb = d.bbands;
+    const bbSeries = bb.series || [];
+    // Get latest price from Yahoo for %B calc
+    let currentPrice = null;
+    try {
+      const { data: pd } = await fetchY(tkr, '5d', '1d');
+      currentPrice = pd[pd.length-1]?.close ?? null;
+    } catch {}
+
+    const pctB = (currentPrice != null && bb.upper && bb.lower)
+      ? (currentPrice - bb.lower) / (bb.upper - bb.lower)
+      : null;
+
+    document.getElementById('tc-pctb').textContent = pctB != null ? fmt(pctB, 3) : '—';
+    document.getElementById('tc-bw').textContent   = bb.bandwidth != null ? fmt(bb.bandwidth, 2) : '—';
+
+    // BBands signal from %B
+    let bbSigTxt, bbSigClass, bbBadge;
+    if (pctB == null)                { bbSigTxt='Sin precio actual'; bbSigClass='sig'; bbBadge='—'; }
+    else if (pctB > 1)              { bbSigTxt='⚠ Precio sobre banda superior'; bbSigClass='sig crit'; bbBadge='SOBRE +2σ'; }
+    else if (pctB > 0.8)            { bbSigTxt='↑ Cerca de banda superior — sobrecomprado'; bbSigClass='sig warn'; bbBadge='ZONA ALTA'; }
+    else if (pctB < 0)              { bbSigTxt='↓ Precio bajo banda inferior'; bbSigClass='sig ok'; bbBadge='BAJO −2σ'; }
+    else if (pctB < 0.2)            { bbSigTxt='↓ Cerca de banda inferior — sobreventa'; bbSigClass='sig ok'; bbBadge='ZONA BAJA'; }
+    else                             { bbSigTxt='✓ Precio dentro de bandas normales'; bbSigClass='sig ok'; bbBadge='NEUTRAL'; }
+
+    const sigEl = document.getElementById('tc-sig');
+    sigEl.className = bbSigClass; sigEl.textContent = bbSigTxt;
+    const badgeEl = document.getElementById('tc-bb-badge');
+    badgeEl.textContent = bbBadge;
+
+    // ── RSI ──────────────────────────────────────────────────
+    const rsi = d.rsi;
+    document.getElementById('tc-rsi-val').textContent = rsi.current != null ? fmt(rsi.current, 2) : '—';
+    const rsiSigEl  = document.getElementById('tc-rsi-sig');
+    const rsiBadge  = document.getElementById('tc-rsi-badge');
+    const rsiColors = { OVERBOUGHT:{ cls:'sig crit', color:'#c07070', label:'SOBRECOMPRADO' },
+                        OVERSOLD:  { cls:'sig ok',   color:'#5aafac', label:'SOBREVENTA'    },
+                        NEUTRAL:   { cls:'sig',      color:'#6a8a8a', label:'NEUTRAL'       },
+                        'N/A':     { cls:'sig',      color:'#6a8a8a', label:'N/A'           } };
+    const rsiCfg = rsiColors[rsi.signal] || rsiColors['N/A'];
+    rsiSigEl.className = rsiCfg.cls; rsiSigEl.textContent = rsiCfg.label;
+    rsiBadge.textContent = rsi.current != null ? `RSI ${fmt(rsi.current,1)}` : '—';
+    rsiBadge.style.background = rsiCfg.color + '22';
+    rsiBadge.style.color = rsiCfg.color;
+    rsiBadge.style.borderColor = rsiCfg.color + '55';
+
+    // ── MACD ─────────────────────────────────────────────────
+    const macd = d.macd;
+    document.getElementById('tc-macd-val').textContent     = macd.macd      != null ? fmt(macd.macd, 4)      : '—';
+    document.getElementById('tc-macd-sig-val').textContent = macd.signal    != null ? fmt(macd.signal, 4)    : '—';
+    document.getElementById('tc-macd-hist').textContent    = macd.histogram != null ? fmt(macd.histogram, 4) : '—';
+    document.getElementById('tc-macd-cross').textContent   = macd.cross === 'BULLISH_CROSS' ? '⬆ Alcista' :
+                                                              macd.cross === 'BEARISH_CROSS' ? '⬇ Bajista' : '—';
+
+    const macdBadge = document.getElementById('tc-macd-badge');
+    const macdIsUp = macd.histogram != null && macd.histogram >= 0;
+    macdBadge.textContent = macd.trend || '—';
+    macdBadge.style.background = (macdIsUp ? '#5aafac' : '#c07070') + '22';
+    macdBadge.style.color      = macdIsUp ? '#5aafac' : '#c07070';
+    macdBadge.style.borderColor= (macdIsUp ? '#5aafac' : '#c07070') + '55';
+
+    // ── Charts ───────────────────────────────────────────────
+    const isDark = document.body.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const tickColor = isDark ? '#6a8a8a' : '#8aaaaa';
+
+    const commonScales = {
+      x: { type:'category', grid:{ color:gridColor, lineWidth:0.5 },
+           ticks:{ color:tickColor, font:{ family:'Montserrat', size:10 }, maxTicksLimit:8, maxRotation:0 } },
+      y: { grid:{ color:gridColor, lineWidth:0.5 },
+           ticks:{ color:tickColor, font:{ family:'Montserrat', size:10 } }, position:'right' }
+    };
+
+    // ── BBands chart ─────────────────────────────────────────
+    killChart('tc-bb');
+    const bbDates  = bbSeries.map(p=>p.date.slice(0,10));
+    const bbUpper  = bbSeries.map(p=>p.upper);
+    const bbMiddle = bbSeries.map(p=>p.middle);
+    const bbLower  = bbSeries.map(p=>p.lower);
+
+    // Overlay current price as a flat line if available
+    const priceData = bbSeries.map(()=>currentPrice);
+
+    const bbCtx = document.getElementById('ch-tc-bb').getContext('2d');
+    S.charts['tc-bb'] = new Chart(bbCtx, {
+      data: { labels: bbDates, datasets: [
+        { type:'line', label:'SMA20', data:bbMiddle, borderColor:'rgba(0,186,179,0.9)', borderWidth:1.4, pointRadius:0, tension:0.1 },
+        { type:'line', label:'Upper', data:bbUpper,  borderColor:'rgba(192,112,112,0.5)', borderWidth:1, borderDash:[4,3], pointRadius:0, fill:'2', backgroundColor:'rgba(192,112,112,0.05)' },
+        { type:'line', label:'Lower', data:bbLower,  borderColor:'rgba(90,175,172,0.5)',  borderWidth:1, borderDash:[4,3], pointRadius:0, fill:false },
+        { type:'line', label:'Precio', data:priceData, borderColor: isDark?'rgba(238,244,244,0.6)':'rgba(10,16,16,0.5)', borderWidth:1.2, borderDash:[6,4], pointRadius:0 },
+      ]},
+      options: {
+        responsive:true, maintainAspectRatio:false, animation:{ duration:300 },
+        interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{ display:false }, zoom:ZOOM_CFG,
+          tooltip:{ backgroundColor:'rgba(10,10,10,0.82)', titleColor:'#ccc', bodyColor:'#aaa',
+            borderColor:'rgba(255,255,255,0.1)', borderWidth:1, padding:8,
+            titleFont:{ family:'DM Mono', size:11 }, bodyFont:{ family:'DM Mono', size:11 } } },
+        scales: commonScales,
+      }
+    });
+
+    // ── RSI chart ─────────────────────────────────────────────
+    killChart('tc-rsi');
+    const rsiSeries = rsi.series || [];
+    const rsiDates  = rsiSeries.map(p=>p.date.slice(0,10));
+    const rsiVals   = rsiSeries.map(p=>p.value);
+    const rsiCtx    = document.getElementById('ch-tc-rsi').getContext('2d');
+    S.charts['tc-rsi'] = new Chart(rsiCtx, {
+      data: { labels: rsiDates, datasets: [
+        { type:'line', data:rsiVals, borderColor:'#7ba8d4', borderWidth:1.4, pointRadius:0, tension:0.2, fill:false },
+        { type:'line', data:rsiDates.map(()=>70), borderColor:'rgba(192,112,112,0.35)', borderWidth:0.8, borderDash:[3,3], pointRadius:0, fill:false },
+        { type:'line', data:rsiDates.map(()=>30), borderColor:'rgba(90,175,172,0.35)',  borderWidth:0.8, borderDash:[3,3], pointRadius:0, fill:false },
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{ duration:300 },
+        plugins:{ legend:{ display:false }, zoom:ZOOM_CFG },
+        scales:{ ...commonScales, y:{ ...commonScales.y, min:0, max:100 } }
+      }
+    });
+
+    // ── MACD chart ────────────────────────────────────────────
+    killChart('tc-macd');
+    const macdSeries = macd.series || [];
+    const macdDates  = macdSeries.map(p=>p.date.slice(0,10));
+    const macdCtx    = document.getElementById('ch-tc-macd').getContext('2d');
+    S.charts['tc-macd'] = new Chart(macdCtx, {
+      data: { labels: macdDates, datasets: [
+        { type:'bar',  data:macdSeries.map(p=>p.hist),
+          backgroundColor: macdSeries.map(p=>(p.hist||0)>=0 ? 'rgba(90,175,172,0.5)' : 'rgba(192,112,112,0.5)'),
+          borderWidth:0 },
+        { type:'line', data:macdSeries.map(p=>p.macd),   borderColor:'rgba(0,186,179,0.9)',  borderWidth:1.2, pointRadius:0, tension:0.2 },
+        { type:'line', data:macdSeries.map(p=>p.signal), borderColor:'rgba(255,160,80,0.8)', borderWidth:1,   pointRadius:0, tension:0.2, borderDash:[3,2] },
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{ duration:300 },
+        plugins:{ legend:{ display:false }, zoom:ZOOM_CFG },
+        scales: commonScales,
+      }
+    });
+
+    // ── Save last run ──────────────────────────────────────────
+    if(!S.lastRun) S.lastRun={};
+    S.lastRun.technicals = S.ticker;
+    document.getElementById('sb-ts').textContent = ts();
+
+  } catch(e) {
+    const sigEl = document.getElementById('tc-sig');
+    sigEl.className = 'sig crit';
+    sigEl.textContent = '⛔ ' + e.message;
+    if(!S.lastRun) S.lastRun={};
+    S.lastRun.technicals = S.ticker; // prevent re-trigger loop on error
+  }
+  ld.classList.remove('show');
 }
 
 // ══════════════════════════════════════════════
