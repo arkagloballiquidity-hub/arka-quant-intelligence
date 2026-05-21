@@ -20,8 +20,7 @@ export default async function handler(req, res) {
 
   const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token);
   if (authErr || !caller) return res.status(401).json({ error: 'Sesión inválida' });
-  const callerRole = caller.app_metadata?.role || caller.user_metadata?.role;
-  if (callerRole !== 'admin') return res.status(403).json({ error: 'Solo admins' });
+  if (caller.app_metadata?.role !== 'admin') return res.status(403).json({ error: 'Solo admins' });
 
   const { action, username, password, name, role, email, user_id } = req.body;
 

@@ -20,9 +20,8 @@ export default async function handler(req, res) {
 
   const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token);
   if (authErr || !caller) return res.status(401).json({ error: 'Sesión inválida' });
-  // Verificar rol en app_metadata (no user_metadata — este es escribible por el usuario)
-  const callerRole = caller.app_metadata?.role || caller.user_metadata?.role;
-  if (callerRole !== 'admin') return res.status(403).json({ error: 'Solo admins' });
+  // app_metadata solo escribible por service role — NO usar user_metadata como fallback
+  if (caller.app_metadata?.role !== 'admin') return res.status(403).json({ error: 'Solo admins' });
 
   const { username, password, name, role, email } = req.body;
   if (!username || !password || !name || !email) {
@@ -53,6 +52,10 @@ export default async function handler(req, res) {
     }
   } else {
     authUserId = authData.user.id;
+    // Setear app_metadata (solo escribible por service role — protege contra escalación de privilegios)
+    await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+      app_metadata: { role: userRole }
+    });
   }
 
   const { error: dbErr } = await supabaseAdmin

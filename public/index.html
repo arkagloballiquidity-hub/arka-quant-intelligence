@@ -1831,25 +1831,35 @@ function openAdmin(){
 }
 function closeAdmin(){document.getElementById('ov-admin').classList.add('hidden');}
 
+function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 async function renderAdminList(){
   const list=document.getElementById('admin-list');
   list.innerHTML='<div style="color:var(--w3);font-size:11px;padding:8px">Cargando…</div>';
   try{
     const {data}=await supa.from('users').select('*').order('created_at');
-    list.innerHTML=(data||[]).map(u=>`
-      <div class="user-row">
-        <div class="u-avatar">${u.name.charAt(0).toUpperCase()}</div>
+    list.innerHTML='';
+    (data||[]).forEach(u=>{
+      const row=document.createElement('div');
+      row.className='user-row';
+      row.innerHTML=`
+        <div class="u-avatar">${_esc(u.name.charAt(0).toUpperCase())}</div>
         <div class="u-info">
-          <div class="u-name">${u.name} <span style="color:var(--w2);font-weight:400;font-size:10px">@${u.username}</span></div>
-          <div class="u-meta">${u.email||''}</div>
+          <div class="u-name">${_esc(u.name)} <span style="color:var(--w2);font-weight:400;font-size:10px">@${_esc(u.username)}</span></div>
+          <div class="u-meta">${_esc(u.email||'')}</div>
         </div>
-        <span class="role-badge ${u.role==='admin'?'role-admin':'role-trader'}">${u.role}</span>
-        <div class="u-btns">
-          <button class="btn-sm" onclick="editUser('${u.id}','${u.username}','${u.name}','${u.email||''}','${u.role}')">Editar</button>
-          <button class="btn-sm danger" onclick="delUser('${u.id}','${u.username}')">Eliminar</button>
-        </div>
-      </div>`).join('');
-  }catch(e){list.innerHTML=`<div style="color:var(--neg);font-size:11px;padding:8px">Error: ${e.message}</div>`;}
+        <span class="role-badge ${u.role==='admin'?'role-admin':'role-trader'}">${_esc(u.role)}</span>
+        <div class="u-btns"></div>`;
+      const btns=row.querySelector('.u-btns');
+      const editBtn=document.createElement('button');
+      editBtn.className='btn-sm';editBtn.textContent='Editar';
+      editBtn.addEventListener('click',()=>editUser(u.id,u.username,u.name,u.email||'',u.role));
+      const delBtn=document.createElement('button');
+      delBtn.className='btn-sm danger';delBtn.textContent='Eliminar';
+      delBtn.addEventListener('click',()=>delUser(u.id,u.username));
+      btns.append(editBtn,delBtn);
+      list.appendChild(row);
+    });
+  }catch(e){list.innerHTML=`<div style="color:var(--neg);font-size:11px;padding:8px">Error: ${_esc(e.message)}</div>`;}
 }
 
 function editUser(id,u,n,e,r){
