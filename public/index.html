@@ -1881,14 +1881,11 @@ async function saveUser(){
     const {data:{session}}=await supa.auth.getSession();
     const token=session?.access_token||'';
     if(id){
-      // Actualizar contraseña y datos en Supabase Auth + DB
-      const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'update-password',username:u,password:p})});
-      const rd=await res.json();
-      if(!res.ok){adminMsg('Error: '+rd.error,'err');btn.textContent='Guardar Usuario';btn.disabled=false;return;}
+      // Editar: solo actualizar datos en tabla (contraseña se cambia desde Supabase dashboard)
       await supa.from('users').update({username:u,name:n,role:r}).eq('id',id);
     } else {
       // Crear usuario en Supabase Auth e insertar en DB
-      const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'create',username:u,password:p,name:n,role:r,email:e})});
+      const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p,name:n,role:r,email:e})});
       const rd=await res.json();
       if(!res.ok){adminMsg('Error: '+rd.error,'err');btn.textContent='Guardar Usuario';btn.disabled=false;return;}
     }

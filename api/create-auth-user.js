@@ -1,4 +1,4 @@
-// api/create-auth-user.js — crea y actualiza usuarios en Supabase Auth + DB
+// api/create-auth-user.js — crea usuario en Supabase Auth e inserta en tabla users
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -20,38 +20,16 @@ export default async function handler(req, res) {
   if (authErr || !caller) return res.status(401).json({ error: 'Sesión inválida' });
   if (caller.user_metadata?.role !== 'admin') return res.status(403).json({ error: 'Solo admins' });
 
-  const { action, username, password, name, role, email, user_id } = req.body;
-
-  // ── ACTUALIZAR CONTRASEÑA ──────────────────────────────────────────
-  if (action === 'update-password') {
-    if (!password) return res.status(400).json({ error: 'password es requerido' });
-
-    let targetId = user_id;
-    if (!targetId && username) {
-      const { data: rows } = await supabaseAdmin
-        .from('users')
-        .select('auth_user_id')
-        .eq('username', username.toLowerCase())
-        .limit(1);
-      const found = rows?.[0];
-      if (!found?.auth_user_id) return res.status(404).json({ error: 'Usuario sin cuenta Auth' });
-      targetId = found.auth_user_id;
-    }
-    if (!targetId) return res.status(400).json({ error: 'user_id o username requerido' });
-
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(targetId, { password });
-    if (error) return res.status(400).json({ error: error.message });
-    return res.status(200).json({ success: true });
-  }
-
-  // ── CREAR USUARIO (default) ────────────────────────────────────────
+  const { username, password, name, role, email } = req.body;
   if (!username || !password || !name || !email) {
     return res.status(400).json({ error: 'username, password, name y email son requeridos' });
   }
+
   const authEmail = email.toLowerCase().trim();
   const userRole = role || 'trader';
 
-  let authUserId, existed = false;
+  let authUserId;
+  let existed = false;
 
   const { data: authData, error: authCreateErr } = await supabaseAdmin.auth.admin.createUser({
     email: authEmail,
@@ -80,6 +58,9 @@ export default async function handler(req, res) {
       { onConflict: 'username' }
     );
 
-  if (dbErr) return res.status(400).json({ error: 'Auth OK pero fallo DB: ' + dbErr.message });
+  if (dbErr) {
+    return res.status(400).json({ error: 'Auth OK pero fallo DB: ' + dbErr.message });
+  }
+
   return res.status(200).json({ user_id: authUserId, existed });
 }
