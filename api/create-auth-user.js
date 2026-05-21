@@ -21,10 +21,10 @@ export default async function handler(req, res) {
   if (authErr || !caller) return res.status(401).json({ error: 'Sesión inválida' });
   if (caller.user_metadata?.role !== 'admin') return res.status(403).json({ error: 'Solo admins' });
 
-  const { username, password, name, role } = req.body;
-  if (!username || !password || !name) return res.status(400).json({ error: 'username, password y name son requeridos' });
+  const { username, password, name, role, email } = req.body;
+  if (!username || !password || !name || !email) return res.status(400).json({ error: 'username, password, name y email son requeridos' });
 
-  const authEmail = `${username.toLowerCase().trim()}@arkaquant.app`;
+  const authEmail = email.toLowerCase().trim();
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email: authEmail,

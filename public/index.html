@@ -757,6 +757,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:11px;}
         <div class="form-grid">
           <div class="form-field"><div class="lbl">Usuario (login)</div><input class="form-inp" id="fu-u" placeholder="usuario"/></div>
           <div class="form-field"><div class="lbl">Nombre</div><input class="form-inp" id="fu-n" placeholder="Nombre Completo"/></div>
+          <div class="form-field"><div class="lbl">Email</div><input class="form-inp" id="fu-e" type="email" placeholder="correo@ejemplo.com"/></div>
           <div class="form-field"><div class="lbl">Contraseña</div><input class="form-inp" id="fu-p" type="password" placeholder="••••••••"/></div>
           <div class="form-field"><div class="lbl">Rol</div>
             <select class="form-select" id="fu-r"><option value="trader">Trader</option><option value="admin">Admin</option></select>
@@ -1840,22 +1841,23 @@ async function renderAdminList(){
         <div class="u-avatar">${u.name.charAt(0).toUpperCase()}</div>
         <div class="u-info">
           <div class="u-name">${u.name} <span style="color:var(--w2);font-weight:400;font-size:10px">@${u.username}</span></div>
-          <div class="u-meta">${'•'.repeat(u.password.length)}</div>
+          <div class="u-meta">${u.email||''}</div>
         </div>
         <span class="role-badge ${u.role==='admin'?'role-admin':'role-trader'}">${u.role}</span>
         <div class="u-btns">
-          <button class="btn-sm" onclick="editUser('${u.id}','${u.username}','${u.name}','${u.password}','${u.role}')">Editar</button>
+          <button class="btn-sm" onclick="editUser('${u.id}','${u.username}','${u.name}','${u.email||''}','${u.role}')">Editar</button>
           <button class="btn-sm danger" onclick="delUser('${u.id}','${u.username}')">Eliminar</button>
         </div>
       </div>`).join('');
   }catch(e){list.innerHTML=`<div style="color:var(--neg);font-size:11px;padding:8px">Error: ${e.message}</div>`;}
 }
 
-function editUser(id,u,n,p,r){
+function editUser(id,u,n,e,r){
   document.getElementById('edit-id').value=id;
   document.getElementById('fu-u').value=u;
   document.getElementById('fu-n').value=n;
-  document.getElementById('fu-p').value=p;
+  document.getElementById('fu-e').value=e||'';
+  document.getElementById('fu-p').value='';
   document.getElementById('fu-r').value=r;
 }
 
@@ -1869,9 +1871,10 @@ async function saveUser(){
   const id=document.getElementById('edit-id').value;
   const u=document.getElementById('fu-u').value.trim().toLowerCase();
   const n=document.getElementById('fu-n').value.trim();
+  const e=document.getElementById('fu-e').value.trim().toLowerCase();
   const p=document.getElementById('fu-p').value;
   const r=document.getElementById('fu-r').value;
-  if(!u||!n||!p){adminMsg('Completa todos los campos','err');return;}
+  if(!u||!n||!e||!p){adminMsg('Completa todos los campos incluyendo email','err');return;}
   const btn=document.getElementById('admin-save-btn');
   btn.textContent='Guardando…'; btn.disabled=true;
   try{
@@ -1883,14 +1886,14 @@ async function saveUser(){
       await supa.from('users').update({username:u,name:n,role:r}).eq('id',id);
     } else {
       // Crear usuario en Supabase Auth
-      const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p,name:n,role:r})});
+      const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p,name:n,role:r,email:e})});
       const rd=await res.json();
       if(!res.ok){adminMsg('Error Auth: '+rd.error,'err');btn.textContent='Guardar Usuario';btn.disabled=false;return;}
-      await supa.from('users').insert({username:u,name:n,role:r,auth_user_id:rd.user_id||null});
+      await supa.from('users').insert({username:u,name:n,role:r,email:e,auth_user_id:rd.user_id||null});
     }
     await renderAdminList();
     adminMsg(id?'Usuario actualizado':'Usuario creado','ok');
-    ['edit-id','fu-u','fu-n','fu-p'].forEach(i=>document.getElementById(i).value='');
+    ['edit-id','fu-u','fu-n','fu-e','fu-p'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('fu-r').value='trader';
   }catch(e){adminMsg('Error: '+e.message,'err');}
   btn.textContent='Guardar Usuario'; btn.disabled=false;
