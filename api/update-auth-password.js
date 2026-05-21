@@ -24,12 +24,17 @@ export default async function handler(req, res) {
   if (!password) return res.status(400).json({ error: 'password es requerido' });
 
   let targetId = user_id;
+
+  // Si no viene user_id, buscar por username en la tabla users (usando auth_user_id)
   if (!targetId && username) {
-    const authEmail = `${username.toLowerCase()}@arkaquant.app`;
-    const { data: list } = await supabaseAdmin.auth.admin.listUsers();
-    const found = list?.users?.find(u => u.email === authEmail);
-    if (!found) return res.status(404).json({ error: 'Usuario no encontrado' });
-    targetId = found.id;
+    const { data: rows } = await supabaseAdmin
+      .from('users')
+      .select('auth_user_id')
+      .eq('username', username.toLowerCase())
+      .limit(1);
+    const found = rows?.[0];
+    if (!found?.auth_user_id) return res.status(404).json({ error: 'Usuario no encontrado o sin cuenta Auth' });
+    targetId = found.auth_user_id;
   }
 
   if (!targetId) return res.status(400).json({ error: 'user_id o username requerido' });
