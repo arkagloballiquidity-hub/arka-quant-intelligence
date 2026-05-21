@@ -1885,11 +1885,10 @@ async function saveUser(){
       await fetch('/api/update-auth-password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p})});
       await supa.from('users').update({username:u,name:n,role:r}).eq('id',id);
     } else {
-      // Crear usuario en Supabase Auth
+      // Crear usuario en Supabase Auth e insertar en DB (el API lo hace todo)
       const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p,name:n,role:r,email:e})});
       const rd=await res.json();
-      if(!res.ok){adminMsg('Error Auth: '+rd.error,'err');btn.textContent='Guardar Usuario';btn.disabled=false;return;}
-      await supa.from('users').insert({username:u,name:n,role:r,email:e,auth_user_id:rd.user_id||null});
+      if(!res.ok){adminMsg('Error: '+rd.error,'err');btn.textContent='Guardar Usuario';btn.disabled=false;return;}
     }
     await renderAdminList();
     adminMsg(id?'Usuario actualizado':'Usuario creado','ok');
