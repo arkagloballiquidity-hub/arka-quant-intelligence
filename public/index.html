@@ -1685,16 +1685,24 @@ async function doLogin(){
   const btn=document.getElementById('li-btn');
   const err=document.getElementById('li-err');
   btn.textContent='Verificando…'; btn.disabled=true;
+  err.classList.remove('show');
   try{
-    const {data:rows,error}=await supa.from('users').select('*').eq('username',u).eq('password',p).limit(1);
-    const data=rows?.[0]||null;
-    if(error||!data){
+    // Supabase Auth — contraseña hasheada, no texto plano
+    const authEmail=u+'@arkaquant.app';
+    const {data:authData,error:authErr}=await supa.auth.signInWithPassword({email:authEmail,password:p});
+    if(authErr||!authData?.user){
       err.classList.add('show');
       document.getElementById('li-p').value='';
     } else {
-      err.classList.remove('show');
-      localStorage.setItem('arka_sess',JSON.stringify({u:data.username,n:data.name,r:data.role,ts:Date.now()}));
-      enterApp(data.username,data.name,data.role);
+      const meta=authData.user.user_metadata||{};
+      const username=meta.username||u;
+      const name=meta.display_name||u;
+      const role=meta.role||'trader';
+      // Cargar prefs desde la tabla users
+      const {data:rows}=await supa.from('users').select('prefs,name,role').eq('username',username).limit(1);
+      const dbUser=rows?.[0]||null;
+      localStorage.setItem('arka_sess',JSON.stringify({u:username,n:dbUser?.name||name,r:dbUser?.role||role,ts:Date.now()}));
+      enterApp(username,dbUser?.name||name,dbUser?.role||role);
     }
   }catch(e){
     err.textContent='Error de conexión: '+e.message; err.classList.add('show');
@@ -1704,16 +1712,19 @@ async function doLogin(){
 
 async function checkSession(){
   try{
-    const s=JSON.parse(localStorage.getItem('arka_sess')||'null');
-    if(!s||Date.now()-s.ts>7*86400000){localStorage.removeItem('arka_sess');return false;}
-    const {data:rows2}=await supa.from('users').select('*').eq('username',s.u).limit(1);
-    const data=rows2?.[0]||null;
-    if(!data){localStorage.removeItem('arka_sess');return false;}
-    enterApp(data.username,data.name,data.role,true);
+    // Verificar JWT real de Supabase Auth
+    const {data:{session}}=await supa.auth.getSession();
+    if(!session?.user){localStorage.removeItem('arka_sess');return false;}
+    const meta=session.user.user_metadata||{};
+    const username=meta.username||session.user.email?.replace('@arkaquant.app','');
+    const {data:rows2}=await supa.from('users').select('name,role,prefs').eq('username',username).limit(1);
+    const dbUser=rows2?.[0]||null;
+    const name=dbUser?.name||meta.display_name||username;
+    const role=dbUser?.role||meta.role||'trader';
+    localStorage.setItem('arka_sess',JSON.stringify({u:username,n:name,r:role,ts:Date.now()}));
+    enterApp(username,name,role,true);
     return true;
   }catch{
-    const s=JSON.parse(localStorage.getItem('arka_sess')||'null');
-    if(s){enterApp(s.u,s.n,s.r,true);return true;}
     return false;
   }
 }
@@ -1754,7 +1765,8 @@ async function enterApp(u,n,r,silent=false){
   }
 }
 
-function doLogout(){
+async function doLogout(){
+  await supa.auth.signOut();
   localStorage.removeItem('arka_sess');
   // Clear all user state
   S.user=null; S.role=null;
@@ -1870,8 +1882,19 @@ async function saveUser(){
   const btn=document.getElementById('admin-save-btn');
   btn.textContent='Guardando…'; btn.disabled=true;
   try{
-    if(id) await supa.from('users').update({username:u,name:n,password:p,role:r}).eq('id',id);
-    else    await supa.from('users').insert({username:u,name:n,password:p,role:r});
+    const {data:{session}}=await supa.auth.getSession();
+    const token=session?.access_token||'';
+    if(id){
+      // Actualizar contraseña en Supabase Auth
+      await fetch('/api/update-auth-password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p})});
+      await supa.from('users').update({username:u,name:n,role:r}).eq('id',id);
+    } else {
+      // Crear usuario en Supabase Auth
+      const res=await fetch('/api/create-auth-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({username:u,password:p,name:n,role:r})});
+      const rd=await res.json();
+      if(!res.ok){adminMsg('Error Auth: '+rd.error,'err');btn.textContent='Guardar Usuario';btn.disabled=false;return;}
+      await supa.from('users').insert({username:u,name:n,role:r,auth_user_id:rd.user_id||null});
+    }
     await renderAdminList();
     adminMsg(id?'Usuario actualizado':'Usuario creado','ok');
     ['edit-id','fu-u','fu-n','fu-p'].forEach(i=>document.getElementById(i).value='');
