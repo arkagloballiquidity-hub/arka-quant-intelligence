@@ -7,7 +7,9 @@ const supabaseAdmin = createClient(
 );
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  const allowed = /^https:\/\/arka-quant-intelligence(-[a-z0-9]+)?\.vercel\.app$/.test(origin) ? origin : 'https://arka-quant-intelligence-nine.vercel.app';
+  res.setHeader('Access-Control-Allow-Origin', allowed);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -18,7 +20,8 @@ export default async function handler(req, res) {
 
   const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token);
   if (authErr || !caller) return res.status(401).json({ error: 'Sesión inválida' });
-  if (caller.user_metadata?.role !== 'admin') return res.status(403).json({ error: 'Solo admins' });
+  const callerRole = caller.app_metadata?.role || caller.user_metadata?.role;
+  if (callerRole !== 'admin') return res.status(403).json({ error: 'Solo admins' });
 
   const { user_id, username, password } = req.body;
   if (!password) return res.status(400).json({ error: 'password es requerido' });
