@@ -21,16 +21,10 @@ export default async function handler(req, res) {
 
   // Verificar sesión Supabase del llamador
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({
-    error: 'No autorizado',
-    _h: { auth: authHeader||'(none)', keys: Object.keys(req.headers).join(',') }
-  });
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No autorizado' });
   const token = authHeader.split(' ')[1];
   const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
-  if (authErr || !user) return res.status(401).json({
-    error: 'Sesión inválida',
-    _d: { hasUrl: !!process.env.SUPABASE_URL, hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY, urlStart: (process.env.SUPABASE_URL||'').slice(0,30), msg: authErr?.message }
-  });
+  if (authErr || !user) return res.status(401).json({ error: 'Sesión inválida' });
 
   // Extraer endpoint destino (ej: /api/technicals, /yahoo)
   const { ep, ...queryParams } = req.query;

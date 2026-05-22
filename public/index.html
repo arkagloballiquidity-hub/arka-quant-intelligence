@@ -1963,9 +1963,8 @@ function renderWlTags(){
 
 async function fetchY(ticker,range='1y',interval='1d'){
   const url=`/api/relay?ep=/yahoo&ticker=${encodeURIComponent(ticker)}&range=${range}&interval=${interval}`;
-  const tok = await getRelayToken();
-  const r=await fetch(url,{headers:{'Authorization':`Bearer ${tok}`}});
-  if(!r.ok){const _b=await r.json().catch(()=>({}));console.error('relay401 FULL:',JSON.stringify({tok:tok?tok.slice(0,20)+'…':'(empty)',body:_b,status:r.status}));throw new Error(`Relay HTTP ${r.status}`);}
+  const r=await fetch(url,{headers:{'Authorization':`Bearer ${await getRelayToken()}`}});
+  if(!r.ok) throw new Error(`Relay HTTP ${r.status}`);
 
   const d=await r.json();
   if(d.error) throw new Error(d.error);
