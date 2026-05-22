@@ -2077,7 +2077,7 @@ S.stripTickers = getWl().length ? getWl() : [S.ticker, '^NDX', '^GSPC', '^VIX'];
 
 function buildStrip(){
   const tpl = S.stripTickers.map((t,i)=>`
-    <div class="px-item" onclick="jumpTo('${t}')">
+    <div class="px-item" onclick="jumpTo('${_tkr(t)}')">
       <span class="px-sym">${_tkr(t).replace('^','')}</span>
       <span class="px-val" id="pv-${i}">—</span>
       <span class="px-chg" id="pc-${i}">—</span>
