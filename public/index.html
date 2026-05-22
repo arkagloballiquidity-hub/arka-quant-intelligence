@@ -1744,6 +1744,7 @@ async function enterApp(u,n,r,silent=false){
   renderWlTags();
   setTimeout(initTickerAutocomplete, 300);
   if(!silent){runPortfolio();refreshStrip();}
+  if(!S._stripInterval) S._stripInterval=setInterval(refreshStrip,60000);
   // Auto-run analysis modules so data is ready immediately
   if(!silent){
   // ── Auto-run all modules so dashboard is ready immediately ──
@@ -2149,8 +2150,6 @@ async function refreshStrip(){
   }
 }
 buildStrip();
-refreshStrip();
-setInterval(refreshStrip, 60000);
 
 // ══════════════════════════════════════════════
 //  FRACTAL
