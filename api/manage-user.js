@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     'https://arka-quant-intelligence-nine.vercel.app',
     'https://arka-quant-intelligence.vercel.app',
   ];
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : null;
   res.setHeader('Access-Control-Allow-Origin', allowed);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
