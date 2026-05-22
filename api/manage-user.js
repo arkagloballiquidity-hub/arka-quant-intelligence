@@ -8,7 +8,11 @@ const supabaseAdmin = createClient(
 
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
-  const allowed = /^https:\/\/arka-quant-intelligence(-[a-z0-9]+)?\.vercel\.app$/.test(origin) ? origin : 'https://arka-quant-intelligence-nine.vercel.app';
+  const ALLOWED_ORIGINS = [
+    'https://arka-quant-intelligence-nine.vercel.app',
+    'https://arka-quant-intelligence.vercel.app',
+  ];
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   res.setHeader('Access-Control-Allow-Origin', allowed);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
