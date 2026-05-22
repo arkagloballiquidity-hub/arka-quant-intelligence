@@ -1567,6 +1567,8 @@ const S_URL   = 'https://dobshlkspzbckijcatyo.supabase.co';
 const S_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvYnNobGtzcHpiY2tpamNhdHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNzY2NzEsImV4cCI6MjA5NDk1MjY3MX0.LnFUDJpIqXNQo5Gzhp9ijuR0C3M8SqN20rEFcFaKJ_c';
 
 const supa = supabase.createClient(S_URL, S_KEY);
+let _relayToken = '';
+
 const S = {
   ticker:'AAPL', frRng:'1y',
   liveOn:false, liveTimer:null,
@@ -1698,6 +1700,7 @@ async function doLogin(){
       err.classList.add('show');
       document.getElementById('li-p').value='';
     } else {
+      _relayToken = authData.session?.access_token || '';
       localStorage.setItem('arka_sess',JSON.stringify({u,n:dbUser.name,r:dbUser.role,ts:Date.now()}));
       enterApp(u,dbUser.name,dbUser.role);
     }
@@ -1716,6 +1719,7 @@ async function checkSession(){
     const dbUser=rows2?.[0]||null;
     if(!dbUser){localStorage.removeItem('arka_sess');return false;}
     localStorage.setItem('arka_sess',JSON.stringify({u:dbUser.username,n:dbUser.name,r:dbUser.role,ts:Date.now()}));
+    _relayToken = session?.access_token || '';
     enterApp(dbUser.username,dbUser.name,dbUser.role,true);
     return true;
   }catch{
@@ -3699,8 +3703,10 @@ function onRkFrRngChange(){
 // Relay key ya no vive en el frontend — las llamadas pasan por /api/relay (proxy Vercel)
 const ARKA_API_BASE = '/api/relay';
 async function getRelayToken(){
+  if(_relayToken) return _relayToken;
   const {data:{session}}=await supa.auth.getSession();
-  return session?.access_token||'';
+  _relayToken = session?.access_token||'';
+  return _relayToken;
 }
 
 let aiChatOpen      = false;
