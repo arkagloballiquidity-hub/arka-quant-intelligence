@@ -1832,6 +1832,7 @@ function openAdmin(){
 function closeAdmin(){document.getElementById('ov-admin').classList.add('hidden');}
 
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function _tkr(t){return String(t||'').replace(/[^A-Z0-9^=.\-+_]/gi,'');} // sanitize ticker symbols for HTML/onclick use
 async function renderAdminList(){
   const list=document.getElementById('admin-list');
   list.innerHTML='<div style="color:var(--w3);font-size:11px;padding:8px">Cargando…</div>';
@@ -1951,7 +1952,7 @@ function renderWlTags(){
   const tags = getWl();
   const container = document.getElementById('wl-tags');
   if(!container) return;
-  container.innerHTML = tags.map(t=>`<span class="wl-tag"><span class="wl-tag-sym" onclick="jumpTo('${t}')" title="Analizar ${t}">${t}</span><span class="wl-tag-rm" onclick="removeWlTag('${t}')" title="Eliminar de watchlist">✕</span></span>`).join('');
+  container.innerHTML = tags.map(t=>{const s=_tkr(t);return`<span class="wl-tag"><span class="wl-tag-sym" onclick="jumpTo('${s}')" title="Analizar ${s}">${s}</span><span class="wl-tag-rm" onclick="removeWlTag('${s}')" title="Eliminar de watchlist">✕</span></span>`;}).join('');
 }
 
 
@@ -2077,7 +2078,7 @@ S.stripTickers = getWl().length ? getWl() : [S.ticker, '^NDX', '^GSPC', '^VIX'];
 function buildStrip(){
   const tpl = S.stripTickers.map((t,i)=>`
     <div class="px-item" onclick="jumpTo('${t}')">
-      <span class="px-sym">${t.replace('^','')}</span>
+      <span class="px-sym">${_tkr(t).replace('^','')}</span>
       <span class="px-val" id="pv-${i}">—</span>
       <span class="px-chg" id="pc-${i}">—</span>
       <span class="px-x" onclick="event.stopPropagation();removeStripTicker(${i})" title="Quitar">✕</span>
@@ -2214,7 +2215,7 @@ async function runFractal(){
     document.getElementById('fr-abadge').textContent=`${hiIdx.length+loIdx.length} detectadas`;
     const alist=document.getElementById('fr-alist');
     alist.innerHTML=all.length
-      ?all.map(({i,dir})=>`<div class="arow ${dir}"><span class="a-ts">${dates[i]}</span><span class="a-dir ${dir}">${dir==='hi'?'↑ HI':'↓ LO'}</span><span>${tkr}</span><span class="a-val">${fmt(closes[i])}</span><span class="a-z">z=${fmt((closes[i]-pred[i])/stdRes,2)}</span></div>`).join('')
+      ?all.map(({i,dir})=>`<div class="arow ${dir}"><span class="a-ts">${dates[i]}</span><span class="a-dir ${dir}">${dir==='hi'?'↑ HI':'↓ LO'}</span><span>${_esc(tkr)}</span><span class="a-val">${fmt(closes[i])}</span><span class="a-z">z=${fmt((closes[i]-pred[i])/stdRes,2)}</span></div>`).join('')
       :'<div class="empty"><span>Sin anomalías en este rango</span></div>';
 
     all.slice(0,2).forEach(({i,dir})=>addAlert(tkr,dir==='hi'?'Anomalía ↑':'Anomalía ↓',`${dates[i]} z=${fmt((closes[i]-pred[i])/stdRes,2)}`));
@@ -2594,7 +2595,7 @@ async function runAnomaly(){
           <div class="arow ${a.dir}">
             <span class="a-ts">${fmtD(a.date)}</span>
             <span class="a-dir ${a.dir}">${a.dir==='hi'?'↑ HI':'↓ LO'}</span>
-            <span class="a-sym">${tkr}</span>
+            <span class="a-sym">${_esc(tkr)}</span>
             <span class="a-val">${fmt(a.close)}</span>
             <span class="a-z">z=${fmt(a.z,2)}</span>
           </div>`).join('')
@@ -2723,18 +2724,18 @@ async function runPortfolio(){
     }catch{rows.push({t,err:true});}
   }
 
-  document.getElementById('port-body').innerHTML=rows.map(r=>r.err
-    ?`<tr><td class="tc tt" onclick="jumpTo('${r.t}')">${r.t}</td><td colspan="6" style="color:var(--neg)">Error al cargar</td><td><button class="px-rm" onclick="removeFromWatchlist('${r.t}')">✕</button></td></tr>`
+  document.getElementById('port-body').innerHTML=rows.map(r=>{const st=_tkr(r.t);return r.err
+    ?`<tr><td class="tc tt" onclick="jumpTo('${st}')">${st}</td><td colspan="6" style="color:var(--neg)">Error al cargar</td><td><button class="px-rm" onclick="removeFromWatchlist('${st}')">✕</button></td></tr>`
     :`<tr>
-      <td class="tc tt" onclick="jumpTo('${r.t}')">${r.t}</td>
+      <td class="tc tt" onclick="jumpTo('${st}')">${st}</td>
       <td>${fmt(r.last)}</td>
       <td class="${r.d1>=0?'tp':'tn'}">${r.d1>=0?'+':''}${fmt(r.d1,2)}%</td>
       <td class="${r.d5>=0?'tp':'tn'}">${r.d5>=0?'+':''}${fmt(r.d5,2)}%</td>
       <td class="tt">${fmt(r.vol20,2)}%</td>
       <td>${r.atr14?fmt(r.atr14,3):'—'}</td>
       <td class="${r.sigC}">${r.sig}</td>
-      <td><button class="px-rm" onclick="removeFromWatchlist('${r.t}')">✕</button></td>
-    </tr>`).join('');
+      <td><button class="px-rm" onclick="removeFromWatchlist('${st}')">✕</button></td>
+    </tr>`;}).join('');
 
   document.getElementById('port-upd').textContent=`Actualizado: ${new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}`;
 
@@ -2743,7 +2744,7 @@ async function runPortfolio(){
   spark.innerHTML='';
   rows.filter(r=>!r.err&&r.closes).forEach(r=>{
     const div=document.createElement('div');div.className='spark-cell';
-    div.innerHTML=`<div class="spark-sym">${r.t}</div><canvas id="sp-${r.t}" style="flex:1"></canvas>`;
+    div.innerHTML=`<div class="spark-sym">${_tkr(r.t)}</div><canvas id="sp-${_tkr(r.t)}" style="flex:1"></canvas>`;
     spark.appendChild(div);
     setTimeout(()=>{
       const ctx=document.getElementById('sp-'+r.t);if(!ctx) return;
@@ -2903,9 +2904,9 @@ function renderAlerts(){
   list.innerHTML=S.alerts.slice(0,50).map(a=>`
     <div class="arow ${a.title.includes('↑')?'hi':'lo'}">
       <span class="a-ts">${a.ts.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
-      <span class="a-dir ${a.title.includes('↑')?'hi':'lo'}" style="min-width:56px">${a.ticker}</span>
-      <span>${a.title}</span>
-      <span class="a-val a-z">${a.msg}</span>
+      <span class="a-dir ${a.title.includes('↑')?'hi':'lo'}" style="min-width:56px">${_esc(a.ticker)}</span>
+      <span>${_esc(a.title)}</span>
+      <span class="a-val a-z">${_esc(a.msg)}</span>
     </div>`).join('');
 }
 function removeFromWatchlist(t){

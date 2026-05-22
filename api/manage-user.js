@@ -29,6 +29,7 @@ export default async function handler(req, res) {
     if (!username || !password || !name || !email) {
       return res.status(400).json({ error: 'username, password, name y email son requeridos' });
     }
+    if (password.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     const authEmail = email.toLowerCase().trim();
     const userRole = role || 'trader';
 
@@ -69,6 +70,7 @@ export default async function handler(req, res) {
   // ── ACTUALIZAR CONTRASEÑA ──────────────────────────────────────────
   if (action === 'update-password') {
     if (!password) return res.status(400).json({ error: 'password es requerido' });
+    if (password.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
 
     let targetId = user_id;
 
